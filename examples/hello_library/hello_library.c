@@ -2,11 +2,8 @@
 
 #ifdef SNOB_BUILD
 #   define SNOB_CC "gcc"
-#   include "snob.h"
-
-#   ifdef OBJ
+#   include "../../snob.h"
 #       define SNOB_CFLAGS "-c"
-#   endif
 
     snob_start()
         snob_build()
@@ -15,7 +12,7 @@
 
 #include <stdio.h>
 
-int main(void) {
+int say_hello(void) {
     printf("hello, world!");
     return 0;
 }

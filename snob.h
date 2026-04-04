@@ -2,11 +2,10 @@
 #define H_SNOB
 
 // Overriding main
-#define main(...)   main(void) {            \
-                        _snob_build_fn();   \
-                    }                       \
-                    int _snob_prog_main(__VA_ARGS__)
+#define main(...)   _snob_prog_main(__VA_ARGS__)
 
+#define main(...) _snob_prog_main(__VA_ARGS__)
+#define _snob_build_fn main
 
 // Parameters
 #ifndef SNOB_CC
@@ -25,14 +24,14 @@
 
 // Predefined commands
 #ifndef snob_build
-#   define snob_build(extras)       snob_cmd(SNOB_CC " " SNOB_CFLAGS " " extras " " __FILE__)
+#   define snob_build(extras)       snob_cmd(SNOB_CC " " SNOB_CFLAGS " " extras " " __FILE__) // TODO: platform agnostic way to achieve this?
 #endif
 
 // Course of a snob program's life
-#define snob_start()    void _snob_build_fn(void) {
+#define snob_start()    void (main)(void) {
 //#define snob_main()     int main(void) {return 0;} snob_start()
 #define snob_end()      }
 
-#define snob_nob()      void _snob_build_fn(void) {}
+#define snob_nob()      void (main)(void) {}
 
 #endif

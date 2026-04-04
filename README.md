@@ -28,9 +28,7 @@ Renames the `main` function to `_snob_prog_main`.
 
 It also `#define`s some constants like `SNOB_CC` and `SNOB_CFLAGS`.
 
-#### `snob_start()` / `snob_main()`
-[warning, due to change very soon]
-
+#### `snob_start()`
 Defines the start of the build logic.
 
 #### `snob_end()`
