@@ -1,3 +1,4 @@
+// Compile me with `-DSNOB_BUILD`, and then run the output!
 
 #ifdef SNOB_BUILD
 #   define SNOB_CC "gcc"
