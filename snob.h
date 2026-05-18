@@ -1,9 +1,6 @@
 #ifndef H_SNOB
 #define H_SNOB
 
-// Overriding main
-#define main(...)   _snob_prog_main(__VA_ARGS__); int _snob_prog_main_dummy(void) 
-
 // Parameters
 #ifndef SNOB_CC
 #   define SNOB_CC "cc" 
@@ -13,26 +10,120 @@
 #   define SNOB_CFLAGS ""
 #endif
 
-// Running commands
-#ifndef snob_cmd        
+#ifndef SNOB_NET_DEPENDENCIES // TODO
+#   define SNOB_NET_DEPENDENCIES
+#endif
+
+#ifndef SNOB_LOCAL_DEPENDENCIES // TODO
+#   define SNOB_LOCAL_DEPENDENCIES
+#endif
+
+
+// Utils
+#ifndef snob_cmd
 #   include <stdlib.h>
-#   define snob_cmd(...)                        system(__VA_ARGS__);
+#   define snob_cmd(...)    system(__VA_ARGS__);
 #endif
 
-// Predefined build commands
+#define SNOB_STR(x)         SNOB_STR_INNER(x)
+#define SNOB_STR_INNER(x)   #x
+
+
+// Hooks
+#ifndef snob_pre_build
+#   define snob_pre_build // TODO: fill out local deps? 
+#endif
+
 #ifndef snob_build
-#   define snob_build(extras)                   snob_cmd(SNOB_CC " " SNOB_CFLAGS " " extras " " __FILE__) // TODO: platform agnostic way to achieve this?
+#   define snob_build(target) snob_cmd(SNOB_CC " " SNOB_CFLAGS " " target)
 #endif
 
-#ifndef snob_build_target
-#   define snob_build_target(target, extras)    snob_cmd(SNOB_CC " " SNOB_CFLAGS " " extras " " target)
+#ifndef snob_post_build
+#   define snob_post_build
 #endif
 
-// Course of a snob program's life
-#define snob_start()                            void (main)(void) {
-#define snob_end()                              }
 
-#define snob_nob()                              void (main)(void) {}
-#define snob_quick()                            snob_start() snob_build() snob_end()
+// Functions
+
+
+// Implementation
+
+#ifdef SNOB_IMPLEMENTATION
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <ctype.h>
+
+    void burnline(FILE* input_stream) {
+        while (fgetc(input_stream) != '\n' && !feof(input_stream));
+    }
+
+    void copyline(FILE* input_stream, FILE* result_stream) {
+        fputc('#', result_stream);
+        
+        // Copy rest of line after adding already consumed '#'
+        int c;
+        while ((c = fgetc(input_stream)) != '\n' && !feof(input_stream)) {
+            fputc(c, result_stream);
+
+            // Handling multi line macros
+            if (c == '\\') {
+                burnline(input_stream);
+                fputc('\n', result_stream);
+            }
+        }
+
+        // Adding newline
+        fputc('\n', result_stream);
+    }
+
+    void checkline(FILE* input_stream, FILE* result_stream) {
+        int c;
+        while (isspace( c = fgetc(input_stream) ) && !feof(input_stream));
+        
+        if (c == '#')
+            copyline(input_stream, result_stream);
+        else
+            burnline(input_stream);
+    }
+
+    int main(int argc, char** argv) {
+        // Check for correct argument length (should be <script>, <mode>, <files...>
+        if (argc < 3) {
+            fprintf(stderr, "Incorrect arguments provided\n\tUSAGE:\n\t\tsnob <mode> <...targets>\n");
+            return EXIT_FAILURE;
+        }
+
+        // Read the mode
+        char* mode = argv[1];
+
+        // Iterate through all files
+        for (int i = 2; i < argc; i++) {
+            // Opening files
+            char result_name[] = "snob_tempfile_XXXXXX";
+            mkstemp(result_name);
+
+            FILE* input_file = fopen(argv[i], "r");
+            FILE* result_file = fopen(result_name, "w");
+
+            // Putting mode header information
+            fputs("#define ", result_file);
+            fputs(mode, result_file);
+            fputc('\n', result_file);
+
+            // Processing file
+            while(!feof(input_file))
+                checkline(input_file, result_file);
+
+            // Adding build commands
+            fputs("int main(void) {\n", result_file);
+            fputs("   " SNOB_STR(snob_pre_build), result_file);
+            fputs("   " SNOB_STR(snob_build("example")), result_file); // FIXME
+            fputs("   " SNOB_STR(snob_post_build), result_file);
+            fputs("}\n", result_file);
+        }
+
+        return EXIT_SUCCESS;
+    }
+#endif
 
 #endif
