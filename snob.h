@@ -10,6 +10,10 @@
 #   define SNOB_CFLAGS ""
 #endif
 
+#ifndef SNOB_LDFLAGS
+#   define SNOB_LDFLAGS ""
+#endif
+
 #ifndef SNOB_NET_DEPENDENCIES // TODO
 #   define SNOB_NET_DEPENDENCIES
 #endif
@@ -35,7 +39,7 @@
 #endif
 
 #ifndef snob_build
-#   define snob_build(target) snob_cmd(SNOB_CC " " SNOB_CFLAGS " " target)
+#   define snob_build(target)       snob_cmd(SNOB_CC " " SNOB_CFLAGS " " SNOB_LDFLAGS " " target)
 #endif
 
 #ifndef snob_post_build
