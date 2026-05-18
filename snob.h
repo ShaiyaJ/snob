@@ -25,8 +25,8 @@
 #   define snob_cmd(...)    system(__VA_ARGS__);
 #endif
 
-#define SNOB_STR(x)         SNOB_STR_INNER(x)
-#define SNOB_STR_INNER(x)   #x
+#define SNOB_STR(x)         SNOB_EXPAND(x)
+#define SNOB_EXPAND(x)      #x
 
 
 // Hooks
@@ -115,11 +115,18 @@
                 checkline(input_file, result_file);
 
             // Adding build commands
-            fputs("int main(void) {\n", result_file);
-            fputs("   " SNOB_STR(snob_pre_build), result_file);
-            fputs("   " SNOB_STR(snob_build("example")), result_file); // FIXME
-            fputs("   " SNOB_STR(snob_post_build), result_file);
+            fputs("int main(void) {\n",         result_file);
+            fputs("   " "snob_pre_build\n",     result_file);
+            fputs("   " "snob_build(",          result_file); 
+                            fputs(argv[i],      result_file); 
+                            fputs(")\n",        result_file); 
+            fputs("   " "snob_post_build\n",    result_file);
             fputs("}\n", result_file);
+
+            // Compile the tempfile 
+            
+
+            // Execute the tempfile
         }
 
         return EXIT_SUCCESS;
