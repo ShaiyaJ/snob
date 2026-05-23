@@ -5,14 +5,13 @@
 
 // Then, we define mode-specific build information
 #ifdef BUILD_AS_OBJ
-#   define SNOB_CFLAGS SNO"-c" 
+#   define SNOB_CFLAGS "-c" 
 #elifdef BUILD_AS_PROD_EXE
 #   define SNOB_CFLAGS "-O2"
 #endif
 
 // Finally, we include snob
-#define SNOB_IMPLEMENTATION // We only need this line if we're using the standard CLI interface for snob
-#include "../snob.h"
+#include "snob.h"
 
 // The program goes below
 #include <stdio.h>
