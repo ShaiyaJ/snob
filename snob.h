@@ -153,12 +153,8 @@
         // Iterate through all files
         for (int i = 2; i < argc; i++) {
             // Opening files
-            char result_file_name[] = "snob_tempfile_XXXXXX";
-            char result_name[sizeof(result_file_name) + 2] = {0};
-
-            mkstemp(result_file_name);
-            strcat(result_name, result_file_name);
-            strcat(result_name, ".c");              // Some compilers get confused without the .c ext
+            char result_name[] = "snob_tempfile_XXXXXX.c";
+            mkstemps(result_name, 2);
 
             FILE* input_file = fopen(argv[i], "r");
             FILE* result_file = fopen(result_name, "w");
