@@ -99,102 +99,132 @@
 // Implementation
 
 #ifdef SNOB_IMPLEMENTATION
-    #include <stdio.h>
-    #include <stdlib.h>
-    #include <ctype.h>
-    #include <string.h>
 
-    // Moves to the next line in an input stream
-    void burnline(FILE* input_stream) {
-        while (fgetc(input_stream) != '\n' && !feof(input_stream));
-    }
 
-    // Copies an entire line to the result file
-    void copyline(FILE* input_stream, FILE* result_stream) {
-        fputc('#', result_stream);
-        
-        // Copy rest of line after adding already consumed '#'
-        int c;
-        while ((c = fgetc(input_stream)) != '\n' && !feof(input_stream)) {
-            fputc(c, result_stream);
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+#include <libgen.h>
+#include <unistd.h>
 
-            // Handling multi line macros
-            if (c == '\\') {
-                burnline(input_stream);
-                fputc('\n', result_stream);
-            }
-        }
+// Moves to the next line in an input stream
+void burnline(FILE* input_stream) {
+    while (fgetc(input_stream) != '\n' && !feof(input_stream));
+}
 
-        // Adding newline
-        fputc('\n', result_stream);
-    }
+// Copies an entire line to the result file
+void copyline(FILE* input_stream, FILE* result_stream) {
+    fputc('#', result_stream);
+    
+    // Copy rest of line after adding already consumed '#'
+    int c;
+    while ((c = fgetc(input_stream)) != '\n' && !feof(input_stream)) {
+        fputc(c, result_stream);
 
-    // Checks whether a line is a compiler directive or program code
-    void checkline(FILE* input_stream, FILE* result_stream) {
-        int c;
-        while (isspace( c = fgetc(input_stream) ) && !feof(input_stream));
-        
-        if (c == '#')
-            copyline(input_stream, result_stream);
-        else
+        // Handling multi line macros
+        if (c == '\\') {
             burnline(input_stream);
+            fputc('\n', result_stream);
+        }
     }
 
-    int main(int argc, char** argv) {
-        // Check for correct argument length (should be <script>, <mode>, <files...>
-        if (argc < 3) {
-            fprintf(stderr, "Incorrect arguments provided\n\tUSAGE:\n\t\tsnob <mode> <...targets>\n");
-            return EXIT_FAILURE;
-        }
+    // Adding newline
+    fputc('\n', result_stream);
+}
 
-        // Read the mode
-        char* mode = argv[1];
+// Checks whether a line is a compiler directive or program code
+void checkline(FILE* input_stream, FILE* result_stream) {
+    int c;
+    while (isspace( c = fgetc(input_stream) ) && !feof(input_stream));
+    
+    if (c == '#')
+        copyline(input_stream, result_stream);
+    else
+        burnline(input_stream);
+}
 
-        // Iterate through all files
-        for (int i = 2; i < argc; i++) {
-            // Opening files
-            char result_name[] = "snob_tempfile_XXXXXX.c";
-            mkstemps(result_name, 2);
-
-            FILE* input_file = fopen(argv[i], "r");
-            FILE* result_file = fopen(result_name, "w");
-
-            // Putting mode header information
-            fputs("#define ", result_file);
-            fputs(mode, result_file);
-            fputc('\n', result_file);
-
-            // Processing file
-            while(!feof(input_file))
-                checkline(input_file, result_file);
-
-            // Adding build commands
-            fputs("\nint main(void) {\n",       result_file);
-            fputs("   " "snob_pre_build\n",     result_file);
-            fputs("   " "snob_build(\"",        result_file); 
-                            fputs(argv[i],      result_file); 
-                            fputs("\")\n",      result_file); 
-            fputs("   " "snob_post_build\n",    result_file);
-            fputs("   " "return 0;\n",          result_file);
-            fputs("}\n", result_file);
-
-            // Compile the tempfile 
-            char executable_name[] = "snob_tempfile_XXXXXX";
-            mkstemp(executable_name);
-
-            SNOB_TEMPFILE_BUILD(result_name, executable_name) 
-
-            // Execute the tempfile
-            SNOB_TEMPFILE_RUN(executable_name)
-
-            // Cleanup
-            fclose(result_file);
-            //remove(result_name);
-            //remove(executable_name);
-        }
-
-        return EXIT_SUCCESS;
+int main(int argc, char** argv) {
+    // Check for correct argument length (should be <script>, <mode>, <files...>
+    if (argc < 3) {
+        fprintf(stderr, "Incorrect arguments provided\n\tUSAGE:\n\t\tsnob <mode> <...targets>\n");
+        return EXIT_FAILURE;
     }
+
+    // Read the mode
+    char* mode = argv[1];
+
+    // Iterate through all files
+    for (int i = 2; i < argc; i++) {
+        // Opening input file (path passed in from argv)
+        char* input_filepath = argv[i];
+        int input_filepath_size = strlen(input_filepath);
+
+        FILE* input_file = fopen(input_filepath, "r");
+
+        // (The resulting output needs to be in the same directory as the source file) 
+
+        // Calculating the directory name of the output file
+        char result_dirname[input_filepath_size];
+
+        strcpy(result_dirname, input_filepath);
+        dirname(result_dirname);
+        strcat(result_dirname, "/");    // Trailing slash
+
+        // Setting basename
+        char result_basename[] = "snob_tempfile_XXXXXX.c"; 
+
+        // Calculating the full final result path
+        int result_filepath_size = strlen(result_dirname) + sizeof(result_basename); // Constructing full filepath
+        char result_filepath[result_filepath_size];
+
+        strcpy(result_filepath, result_dirname);
+        strcat(result_filepath, result_basename);
+
+        // Opening the snob output script file (tempfile)
+        int result_fd = mkstemps(result_filepath, 2);
+        FILE* result_file = fdopen(result_fd, "w");
+
+        // Putting mode header information
+        fputs("#define ", result_file);
+        fputs(mode, result_file);
+        fputc('\n', result_file);
+
+        // Processing file
+        while(!feof(input_file))
+            checkline(input_file, result_file);
+
+        // Adding build commands
+        fputs("\nint main(void) {\n",       result_file);
+        fputs("   " "snob_pre_build\n",     result_file);
+        fputs("   " "snob_build(\"",        result_file); 
+                        fputs(argv[i],      result_file); 
+                        fputs("\")\n",      result_file); 
+        fputs("   " "snob_post_build\n",    result_file);
+        fputs("   " "return 0;\n",          result_file);
+        fputs("}\n", result_file);
+
+        fflush(result_file);
+
+        // Compile the tempfile 
+        char executable_name[] = "snob_tempfile_XXXXXX";
+        close( mkstemp(executable_name) );
+
+        SNOB_TEMPFILE_BUILD(result_filepath, executable_name) 
+
+        // Execute the tempfile
+        SNOB_TEMPFILE_RUN(executable_name)
+
+        // Cleanup
+        fclose(result_file);
+
+        remove(result_filepath);
+        remove(executable_name);
+    }
+
+    return EXIT_SUCCESS;
+}
+
 #endif
 
 #endif

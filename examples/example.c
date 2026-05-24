@@ -11,7 +11,7 @@
 #endif
 
 // Finally, we include snob
-#include "snob.h"
+#include "../snob.h"
 
 // The program goes below
 #include <stdio.h>
