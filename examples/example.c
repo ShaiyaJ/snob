@@ -7,7 +7,7 @@
 #ifdef BUILD_AS_OBJ
 #   define SNOB_CFLAGS "-c" 
 #elifdef BUILD_AS_PROD_EXE
-#   define SNOB_CFLAGS "-O2"
+#   define SNOB_CFLAGS "-O2 -o example"
 #endif
 
 // Finally, we include snob
