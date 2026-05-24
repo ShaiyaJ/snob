@@ -162,6 +162,11 @@ int main(int argc, char** argv) {
 
         FILE* input_file = fopen(input_filepath, "r");
 
+        if (input_file == NULL) {
+            printf("Couldn't find %s, skipping\n", input_filepath);
+            continue;
+        }
+
         // (The resulting output needs to be in the same directory as the source file) 
 
         // Calculating the directory name of the output file
