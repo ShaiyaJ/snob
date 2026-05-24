@@ -119,7 +119,7 @@ void copyline(FILE* input_stream, FILE* result_stream) {
     
     // Copy rest of line after adding already consumed '#'
     int c;
-    while ((c = fgetc(input_stream)) != '\n' && !feof(input_stream)) {
+    while ((c = fgetc(input_stream)) != '\n' && !feof(input_stream)) {      // TODO: If this is in include statement, wrap inbetween #undef SNOB_BUILD_MAIN and #define SNOB_BUILD_MAIN
         fputc(c, result_stream);
 
         // Handling multi line macros
@@ -189,6 +189,8 @@ int main(int argc, char** argv) {
         fputs("#define ", result_file);
         fputs(mode, result_file);
         fputc('\n', result_file);
+
+        fputs("#define SNOB_BUILD_MAIN\n", result_file);
 
         // Processing file
         while(!feof(input_file))
